@@ -11,6 +11,6 @@ if __name__ == "__main__":
     entropy = 0.0
 
     for b, count in bytes_by_counts: 
-        entropy += -(count / len(input_bytes)) * math.log(count / len(input_bytes))
+        entropy += -(count / len(input_bytes)) * math.log2(count / len(input_bytes))
     
     print(round(entropy, 3), round(8 / entropy, 3))
