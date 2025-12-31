@@ -86,6 +86,68 @@ class rANSEncoder:
         return next_state
 
 
+class rANSDecoder:
+    def __init__(self, params, encoded, num_symbols):
+        self.params = params
+
+        self.encoded = bitarray()
+        self.encoded.frombytes(encoded)
+
+        self.num_symbols = num_symbols
+        self.bit_idx = 0
+        
+    def decode(self):
+        symbols = []
+
+        state = self._decode_final_state()
+
+        for _ in range(self.num_symbols):
+            state, symbol = self._decode_symbol(state)
+
+            assert self.params.L <= state <= self.params.H
+
+            symbols.append(symbol)
+
+        return list(reversed(symbols))
+
+    def _decode_final_state(self):
+        final_state_bits = ceil(log2(self.params.H))
+
+        state = int(self.encoded[:final_state_bits].to01(), 2)
+        self.bit_idx += final_state_bits
+
+        return state
+    
+    def _decode_symbol(self, state):
+        block_id = state // self.params.M
+        slot = state % self.params.M
+
+        symbol = self._slot_to_symbol(slot)
+        freq, cumul = self.params.get(symbol)
+
+        prev_state = block_id * freq + slot - cumul
+        prev_state = self._renormalize(prev_state)
+
+        return prev_state, symbol
+
+    def _slot_to_symbol(self, slot):
+        symbol, cumul = 0, self.params.cumul
+
+        while not cumul[symbol] <= slot < cumul[symbol + 1]:
+            symbol += 1
+
+        return symbol        
+
+    def _renormalize(self, state):
+        L, H = self.params.L, self.params.H
+
+        while not L <= state <= H:
+            state = state * 2 + self.encoded[self.bit_idx]
+            self.bit_idx += 1
+
+        return state
+
+
 def main():
     if len(sys.argv) < 2:
         print("USAGE: python3 streaming_rans.py INPUT_FILE")
@@ -98,6 +160,11 @@ def main():
 
     encoder = rANSEncoder(params)
     encoded = encoder.encode(symbols)
+
+    decoder = rANSDecoder(params, encoded, len(symbols))
+    decoded_symbols = decoder.decode()
+
+    assert symbols == decoded_symbols
 
     compression_rate = round(len(symbols) / len(encoded), 3)
 
