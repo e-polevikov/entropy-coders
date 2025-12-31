@@ -1,4 +1,6 @@
 import sys
+import time
+
 from math import ceil, log2
 from bitarray import bitarray
 
@@ -159,17 +161,29 @@ def main():
         symbols = [b for b in f.read()]
 
     params = rANSParams(symbols)
-
     encoder = rANSEncoder(params)
+
+    start = time.perf_counter()
     encoded = encoder.encode(symbols)
+    encoding_duration = round(time.perf_counter() - start, 3)
+    encoding_speed = round(len(symbols) / 1024 / 1024 / encoding_duration, 3)
+
+    print(f"Encoding:\t{encoding_duration}s\t{encoding_speed} MB/s")
 
     decoder = rANSDecoder(params, encoded, len(symbols))
+
+    start = time.perf_counter()
     decoded_symbols = decoder.decode()
+    decoding_duration = round(time.perf_counter() - start, 3)
+    decoding_speed = round(len(symbols) / 1024 / 1024 / decoding_duration, 3)
+
+    print(f"Decoding:\t{decoding_duration}s\t{decoding_speed} MB/s")
 
     assert symbols == decoded_symbols
 
     compression_rate = round(len(symbols) / len(encoded), 3)
 
+    print()
     print(f"{len(symbols)} -> {len(encoded)}\t{compression_rate}x")
 
 
