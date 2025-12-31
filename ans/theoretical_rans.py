@@ -79,7 +79,7 @@ class rANSDecoder:
 
 def main():
     if len(sys.argv) < 2:
-        print("USAGE: python3 huffman.py INPUT_FILE")
+        print("USAGE: python3 theoretical_rans.py INPUT_FILE")
         return
 
     with open(sys.argv[1], "rb") as f:
