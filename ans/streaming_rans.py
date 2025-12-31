@@ -62,7 +62,9 @@ class rANSEncoder:
 
     def _encode_symbol(self, state, symbol):
         state, bits = self._renormalize(state, symbol)
+
         next_state = self._next_state(state, symbol)
+
         return next_state, bits
 
     def _renormalize(self, state, symbol):
@@ -95,7 +97,7 @@ class rANSDecoder:
 
         self.num_symbols = num_symbols
         self.bit_idx = 0
-        
+
     def decode(self):
         symbols = []
 
