@@ -1,5 +1,5 @@
 import sys
-import math
+from math import ceil, log2
 from bitarray import bitarray
 
 
@@ -15,6 +15,13 @@ def calc_freqs_and_cumul(symbols):
         cumul[i + 1] = cumul[i] + freqs[i]
     
     return freqs, cumul
+
+
+def to_bitarray(value, num_bits):
+    bits = bin(value)[2:]
+    bits = "0" * (num_bits - len(bits)) + bits
+
+    return bitarray(bits)
 
 
 class rANSParams:
@@ -44,9 +51,12 @@ class rANSEncoder:
             assert self.params.L <= state <= self.params.H
 
             encoded = bits + encoded
-        
-        final_state_bits = self._get_final_state_bits(state)
-        encoded = final_state_bits + encoded
+
+        bits = to_bitarray(
+            value=state, num_bits=ceil(log2(self.params.H))
+        )
+
+        encoded = bits + encoded
 
         return encoded.tobytes()
 
@@ -74,14 +84,6 @@ class rANSEncoder:
         next_state = block_id * self.params.M + slot
 
         return next_state
-
-    def _get_final_state_bits(self, state):
-        num_state_bits = math.ceil(math.log2(self.params.H))
-
-        state_bits = bin(state)[2:]
-        state_bits = "0" * (num_state_bits - len(state_bits)) + state_bits
-
-        return bitarray(state_bits)
 
 
 def main():
