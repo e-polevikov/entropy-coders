@@ -30,7 +30,7 @@ class rANSParams:
 
         self.M = self.cumul[-1]
 
-        self.L = self.M
+        self.L = self.M * (1 << 16)
         self.H = 2 * self.L - 1
 
     def get(self, symbol):
