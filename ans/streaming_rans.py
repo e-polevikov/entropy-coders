@@ -33,7 +33,8 @@ def to_bitarray(value, num_bits):
 
 class rANSParams:
     def __init__(self, symbols):
-        self.M = 1 << 24
+        self.TOTAL_FREQ_LOG2 = 24
+        self.M = 1 << self.TOTAL_FREQ_LOG2
 
         self.freqs, self.cumul = estimate_freqs_and_cumul(
             symbols, freqs_target_sum=self.M
@@ -95,7 +96,7 @@ class rANSEncoder:
         block_id = state // freq
         slot = cumul + state % freq
 
-        next_state = block_id * self.params.M + slot
+        next_state = (block_id << self.params.TOTAL_FREQ_LOG2) + slot
 
         return next_state
 
@@ -133,8 +134,8 @@ class rANSDecoder:
         return state
     
     def _decode_symbol(self, state):
-        block_id = state // self.params.M
-        slot = state % self.params.M
+        block_id = state >> self.params.TOTAL_FREQ_LOG2
+        slot = state & (self.params.M - 1)
 
         symbol = bisect(self.params.cumul, slot) - 1
 
