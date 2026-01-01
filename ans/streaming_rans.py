@@ -67,13 +67,13 @@ class rANSEncoder:
         return encoded.tobytes()
 
     def _encode_symbol(self, state, symbol):
-        state, bits = self._renormalize(state, symbol)
+        state, bits = self._normalize(state, symbol)
 
         next_state = self._next_state(state, symbol)
 
         return next_state, bits
 
-    def _renormalize(self, state, symbol):
+    def _normalize(self, state, symbol):
         bits = bitarray()
 
         max_state = (self.params.t * self.params.freqs[symbol] << self.params.b) - 1
@@ -136,11 +136,11 @@ class rANSDecoder:
         freq, cumul = self.params.get(symbol)
 
         prev_state = block_id * freq + slot - cumul
-        prev_state = self._renormalize(prev_state)
+        prev_state = self._denormalize(prev_state)
 
         return prev_state, symbol
 
-    def _renormalize(self, state):
+    def _denormalize(self, state):
         while state < self.params.L:
             state <<= self.params.b
             state += ba2int(self.encoded[self.bit_idx:self.bit_idx + self.params.b])
