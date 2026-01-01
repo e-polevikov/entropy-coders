@@ -31,8 +31,9 @@ class rANSParams:
         self.freqs, self.cumul = calc_freqs_and_cumul(symbols)
 
         self.M = self.cumul[-1]
+        self.t = 1 << 16
 
-        self.L = self.M * (1 << 16)
+        self.L = self.M * self.t
         self.H = 2 * self.L - 1
 
     def get(self, symbol):
