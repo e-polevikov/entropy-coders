@@ -5,13 +5,16 @@ from math import ceil, log2
 from bitarray import bitarray
 from bitarray.util import ba2int
 from bisect import bisect
+from utils import normalize_freqs
 
 
-def calc_freqs_and_cumul(symbols):
+def estimate_freqs_and_cumul(symbols, freqs_target_sum):
     freqs = [0 for _ in range(256)]
 
     for symbol in symbols:
         freqs[symbol] += 1
+
+    freqs = normalize_freqs(freqs, target_sum=freqs_target_sum)
 
     cumul = [0 for _ in range(256 + 1)]
 
@@ -30,13 +33,15 @@ def to_bitarray(value, num_bits):
 
 class rANSParams:
     def __init__(self, symbols):
-        self.freqs, self.cumul = calc_freqs_and_cumul(symbols)
+        self.M = 1 << 24
 
-        self.M = self.cumul[-1]
-        self.t = 1 << 16
-        self.b = 16
+        self.freqs, self.cumul = estimate_freqs_and_cumul(
+            symbols, freqs_target_sum=self.M
+        )
 
-        self.L = self.M * self.t
+        self.b = 32
+
+        self.L = self.M
         self.H = (self.L << self.b) - 1
 
     def get(self, symbol):
@@ -76,7 +81,7 @@ class rANSEncoder:
     def _normalize(self, state, symbol):
         bits = bitarray()
 
-        max_state = (self.params.t * self.params.freqs[symbol] << self.params.b) - 1
+        max_state = (self.params.freqs[symbol] << self.params.b) - 1
 
         while state > max_state:
             bits = bitarray(bin(state)[-self.params.b:]) + bits

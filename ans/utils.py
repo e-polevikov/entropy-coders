@@ -24,16 +24,3 @@ def normalize_freqs(freqs, target_sum):
     assert sum(normalized_freqs) == target_sum
 
     return normalized_freqs
-
-
-def main():
-    freqs = [1, 1, 1, 2, 2, 3, 4, 500, 800]
-    target_sum = 1 << 10
-
-    normalized_freqs = normalize_freqs(freqs, target_sum)
-
-    print(normalized_freqs)
-
-
-if __name__ == "__main__":
-    main()
