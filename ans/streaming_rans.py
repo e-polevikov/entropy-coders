@@ -4,6 +4,7 @@ import time
 from math import ceil, log2
 from bitarray import bitarray
 from bitarray.util import ba2int
+from bisect import bisect
 
 
 def calc_freqs_and_cumul(symbols):
@@ -130,7 +131,8 @@ class rANSDecoder:
         block_id = state // self.params.M
         slot = state % self.params.M
 
-        symbol = self._slot_to_symbol(slot)
+        symbol = bisect(self.params.cumul, slot) - 1
+
         freq, cumul = self.params.get(symbol)
 
         prev_state = block_id * freq + slot - cumul
@@ -138,16 +140,7 @@ class rANSDecoder:
 
         return prev_state, symbol
 
-    def _slot_to_symbol(self, slot):
-        symbol, cumul = 0, self.params.cumul
-
-        while not cumul[symbol] <= slot < cumul[symbol + 1]:
-            symbol += 1
-
-        return symbol
-
     def _renormalize(self, state):
-
         while state < self.params.L:
             state <<= self.params.b
             state += ba2int(self.encoded[self.bit_idx:self.bit_idx + self.params.b])
