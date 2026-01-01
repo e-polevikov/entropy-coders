@@ -72,9 +72,8 @@ class rANSEncoder:
 
     def _renormalize(self, state, symbol):
         bits = bitarray()
-        L, H = self.params.L, self.params.H
 
-        while not L <= self._next_state(state, symbol) <= H:
+        while state > 2 * self.params.t * self.params.freqs[symbol] - 1:
             bits = bitarray([state % 2]) + bits
             state = state // 2
 
@@ -141,12 +140,11 @@ class rANSDecoder:
         while not cumul[symbol] <= slot < cumul[symbol + 1]:
             symbol += 1
 
-        return symbol        
+        return symbol
 
     def _renormalize(self, state):
-        L, H = self.params.L, self.params.H
 
-        while not L <= state <= H:
+        while state < self.params.L:
             state = state * 2 + self.encoded[self.bit_idx]
             self.bit_idx += 1
 
