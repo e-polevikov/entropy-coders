@@ -36,7 +36,7 @@ class rANSParams:
         self.b = 16
 
         self.L = self.M * self.t
-        self.H = (1 << self.b) * self.L - 1
+        self.H = (self.L << self.b) - 1
 
     def get(self, symbol):
         return self.freqs[symbol], self.cumul[symbol]
@@ -75,7 +75,7 @@ class rANSEncoder:
     def _renormalize(self, state, symbol):
         bits = bitarray()
 
-        max_state = (1 << self.params.b) * self.params.t * self.params.freqs[symbol] - 1
+        max_state = (self.params.t * self.params.freqs[symbol] << self.params.b) - 1
 
         while state > max_state:
             bits = bitarray(bin(state)[-self.params.b:]) + bits
