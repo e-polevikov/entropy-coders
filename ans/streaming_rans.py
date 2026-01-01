@@ -3,6 +3,7 @@ import time
 
 from math import ceil, log2
 from bitarray import bitarray
+from bitarray.util import ba2int
 
 
 def calc_freqs_and_cumul(symbols):
@@ -32,9 +33,10 @@ class rANSParams:
 
         self.M = self.cumul[-1]
         self.t = 1 << 16
+        self.b = 16
 
         self.L = self.M * self.t
-        self.H = 2 * self.L - 1
+        self.H = (1 << self.b) * self.L - 1
 
     def get(self, symbol):
         return self.freqs[symbol], self.cumul[symbol]
@@ -73,9 +75,11 @@ class rANSEncoder:
     def _renormalize(self, state, symbol):
         bits = bitarray()
 
-        while state > 2 * self.params.t * self.params.freqs[symbol] - 1:
-            bits = bitarray([state % 2]) + bits
-            state = state // 2
+        max_state = (1 << self.params.b) * self.params.t * self.params.freqs[symbol] - 1
+
+        while state > max_state:
+            bits = bitarray(bin(state)[-self.params.b:]) + bits
+            state >>= self.params.b
 
         return state, bits
     
@@ -145,8 +149,9 @@ class rANSDecoder:
     def _renormalize(self, state):
 
         while state < self.params.L:
-            state = state * 2 + self.encoded[self.bit_idx]
-            self.bit_idx += 1
+            state <<= self.params.b
+            state += ba2int(self.encoded[self.bit_idx:self.bit_idx + self.params.b])
+            self.bit_idx += self.params.b
 
         return state
 
