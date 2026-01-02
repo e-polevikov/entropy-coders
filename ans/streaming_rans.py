@@ -9,8 +9,8 @@ from utils import estimate_freqs, calc_cumul
 
 class rANSParams:
     def __init__(self, symbols):
-        self.TOTAL_FREQ_LOG2 = 16
-        self.TOTAL_FREQ = 1 << self.TOTAL_FREQ_LOG2
+        self.LOG2_TOTAL_FREQ = 16
+        self.TOTAL_FREQ = 1 << self.LOG2_TOTAL_FREQ
 
         self.L = self.TOTAL_FREQ
         self.b = 32
@@ -66,7 +66,7 @@ class rANSEncoder:
         block_id = state // freq
         slot = cumul + state % freq
 
-        next_state = (block_id << self.params.TOTAL_FREQ_LOG2) + slot
+        next_state = (block_id << self.params.LOG2_TOTAL_FREQ) + slot
 
         return next_state
 
@@ -97,7 +97,7 @@ class rANSDecoder:
         return list(reversed(symbols))
     
     def _decode_symbol(self, state):
-        block_id = state >> self.params.TOTAL_FREQ_LOG2
+        block_id = state >> self.params.LOG2_TOTAL_FREQ
         slot = state & (self.params.TOTAL_FREQ - 1)
 
         symbol = bisect(self.params.cumul, slot) - 1
