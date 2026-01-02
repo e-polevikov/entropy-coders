@@ -33,7 +33,7 @@ class rANSEncoder:
         for symbol in symbols:
             state = self._encode_symbol(state, symbol)
 
-            assert self.params.L <= state <= (self.params.L << self.params.b) - 1
+            assert self.params.L <= state < self.params.L << self.params.b
 
         self.encoded += int2ba(state, length=64)
 
@@ -83,7 +83,7 @@ class rANSDecoder:
         for _ in range(self.num_symbols):
             state, symbol = self._decode_symbol(state)
 
-            assert self.params.L <= state <= (self.params.L << self.params.b) - 1
+            assert self.params.L <= state < self.params.L << self.params.b
 
             symbols.append(symbol)
 
