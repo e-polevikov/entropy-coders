@@ -25,40 +25,36 @@ class rANSParams:
 class rANSEncoder:
     def __init__(self, params):
         self.params = params
+        self.encoded = bitarray()
 
     def encode(self, symbols):
         state = self.params.L
-        encoded = bitarray()
 
         for symbol in symbols:
-            state, bits = self._encode_symbol(state, symbol)
+            state = self._encode_symbol(state, symbol)
 
             assert self.params.L <= state <= (self.params.L << self.params.b) - 1
 
-            encoded += bits
+        self.encoded += int2ba(state, length=64)
 
-        encoded += int2ba(state, length=64)
-
-        return encoded.tobytes()
+        return self.encoded.tobytes()
 
     def _encode_symbol(self, state, symbol):
-        state, bits = self._normalize(state, symbol)
+        state = self._normalize(state, symbol)
 
         next_state = self._next_state(state, symbol)
 
-        return next_state, bits
+        return next_state
 
     def _normalize(self, state, symbol):
-        bits = bitarray()
-
         max_state = (self.params.freqs[symbol] << self.params.b) - 1
 
         while state > max_state:
             remainder = state & ((1 << self.params.b) - 1)
-            bits += int2ba(remainder, length=self.params.b)
+            self.encoded += int2ba(remainder, length=self.params.b)
             state >>= self.params.b
 
-        return state, bits
+        return state
     
     def _next_state(self, state, symbol):
         freq, cumul = self.params.get(symbol)
