@@ -1,49 +1,22 @@
 import sys
 import time
 
-from math import ceil, log2
 from bitarray import bitarray
-from bitarray.util import ba2int
+from bitarray.util import ba2int, int2ba
 from bisect import bisect
-from utils import normalize_freqs
-
-
-def estimate_freqs_and_cumul(symbols, freqs_target_sum):
-    freqs = [0 for _ in range(256)]
-
-    for symbol in symbols:
-        freqs[symbol] += 1
-
-    freqs = normalize_freqs(freqs, target_sum=freqs_target_sum)
-
-    cumul = [0 for _ in range(256 + 1)]
-
-    for i in range(256):
-        cumul[i + 1] = cumul[i] + freqs[i]
-    
-    return freqs, cumul
-
-
-def to_bitarray(value, num_bits):
-    bits = bin(value)[2:]
-    bits = "0" * (num_bits - len(bits)) + bits
-
-    return bitarray(bits)
+from utils import estimate_freqs, calc_cumul
 
 
 class rANSParams:
     def __init__(self, symbols):
-        self.TOTAL_FREQ_LOG2 = 24
-        self.M = 1 << self.TOTAL_FREQ_LOG2
+        self.TOTAL_FREQ_LOG2 = 16
+        self.TOTAL_FREQ = 1 << self.TOTAL_FREQ_LOG2
 
-        self.freqs, self.cumul = estimate_freqs_and_cumul(
-            symbols, freqs_target_sum=self.M
-        )
-
+        self.L = self.TOTAL_FREQ
         self.b = 32
 
-        self.L = self.M
-        self.H = (self.L << self.b) - 1
+        self.freqs = estimate_freqs(symbols, self.TOTAL_FREQ)
+        self.cumul = calc_cumul(self.freqs)
 
     def get(self, symbol):
         return self.freqs[symbol], self.cumul[symbol]
@@ -60,15 +33,11 @@ class rANSEncoder:
         for symbol in symbols:
             state, bits = self._encode_symbol(state, symbol)
 
-            assert self.params.L <= state <= self.params.H
+            assert self.params.L <= state <= (self.params.L << self.params.b) - 1
 
             encoded = bits + encoded
 
-        bits = to_bitarray(
-            value=state, num_bits=ceil(log2(self.params.H))
-        )
-
-        encoded = bits + encoded
+        encoded = int2ba(state, length=64) + encoded
 
         return encoded.tobytes()
 
@@ -85,7 +54,8 @@ class rANSEncoder:
         max_state = (self.params.freqs[symbol] << self.params.b) - 1
 
         while state > max_state:
-            bits = bitarray(bin(state)[-self.params.b:]) + bits
+            remainder = state & ((1 << self.params.b) - 1)
+            bits = int2ba(remainder, length=self.params.b) + bits
             state >>= self.params.b
 
         return state, bits
@@ -114,28 +84,21 @@ class rANSDecoder:
     def decode(self):
         symbols = []
 
-        state = self._decode_final_state()
+        state = ba2int(self.encoded[:64])
+        self.bit_idx += 64
 
         for _ in range(self.num_symbols):
             state, symbol = self._decode_symbol(state)
 
-            assert self.params.L <= state <= self.params.H
+            assert self.params.L <= state <= (self.params.L << self.params.b) - 1
 
             symbols.append(symbol)
 
         return list(reversed(symbols))
-
-    def _decode_final_state(self):
-        final_state_bits = ceil(log2(self.params.H))
-
-        state = int(self.encoded[:final_state_bits].to01(), 2)
-        self.bit_idx += final_state_bits
-
-        return state
     
     def _decode_symbol(self, state):
         block_id = state >> self.params.TOTAL_FREQ_LOG2
-        slot = state & (self.params.M - 1)
+        slot = state & (self.params.TOTAL_FREQ - 1)
 
         symbol = bisect(self.params.cumul, slot) - 1
 
