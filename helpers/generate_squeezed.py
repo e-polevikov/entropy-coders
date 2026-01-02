@@ -1,8 +1,7 @@
 import random
-import array
 
 def main():
-    N = 10**5
+    N = 20 * 10**6
     squeezed = []
 
     for _ in range(N):
