@@ -35,9 +35,9 @@ class rANSEncoder:
 
             assert self.params.L <= state <= (self.params.L << self.params.b) - 1
 
-            encoded = bits + encoded
+            encoded += bits
 
-        encoded = int2ba(state, length=64) + encoded
+        encoded += int2ba(state, length=64)
 
         return encoded.tobytes()
 
@@ -55,7 +55,7 @@ class rANSEncoder:
 
         while state > max_state:
             remainder = state & ((1 << self.params.b) - 1)
-            bits = int2ba(remainder, length=self.params.b) + bits
+            bits += int2ba(remainder, length=self.params.b)
             state >>= self.params.b
 
         return state, bits
@@ -79,13 +79,12 @@ class rANSDecoder:
         self.encoded.frombytes(encoded)
 
         self.num_symbols = num_symbols
-        self.bit_idx = 0
+        self.bit_idx = 64
 
     def decode(self):
         symbols = []
 
-        state = ba2int(self.encoded[:64])
-        self.bit_idx += 64
+        state = ba2int(self.encoded[-self.bit_idx:])
 
         for _ in range(self.num_symbols):
             state, symbol = self._decode_symbol(state)
@@ -112,7 +111,7 @@ class rANSDecoder:
     def _denormalize(self, state):
         while state < self.params.L:
             state <<= self.params.b
-            state += ba2int(self.encoded[self.bit_idx:self.bit_idx + self.params.b])
+            state += ba2int(self.encoded[-self.bit_idx - self.params.b:-self.bit_idx])
             self.bit_idx += self.params.b
 
         return state
