@@ -47,9 +47,7 @@ class rANSEncoder:
         return next_state
 
     def _normalize(self, state, symbol):
-        max_state = (self.params.freqs[symbol] << self.params.b) - 1
-
-        while state > max_state:
+        while state >= self.params.freqs[symbol] << self.params.b:
             remainder = state & ((1 << self.params.b) - 1)
             self.encoded += int2ba(remainder, length=self.params.b)
             state >>= self.params.b
