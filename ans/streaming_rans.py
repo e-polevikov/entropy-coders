@@ -1,11 +1,8 @@
 import sys
 import time
 
-from bitarray import bitarray
-from bitarray.util import ba2int, int2ba
 from bisect import bisect
 from utils import estimate_freqs, calc_cumul
-
 
 class rANSParams:
     def __init__(self, symbols):
@@ -25,7 +22,7 @@ class rANSParams:
 class rANSEncoder:
     def __init__(self, params):
         self.params = params
-        self.encoded = bitarray()
+        self.encoded = []
 
     def encode(self, symbols):
         state = self.params.L
@@ -35,9 +32,14 @@ class rANSEncoder:
 
             assert self.params.L <= state < self.params.L << self.params.b
 
-        self.encoded += int2ba(state, length=64)
+        self.encoded = b''.join(list(map(
+            lambda x: x.to_bytes(length=4, byteorder='little'),
+            self.encoded
+        )))
 
-        return self.encoded.tobytes()
+        self.encoded += state.to_bytes(length=8, byteorder='little')
+
+        return self.encoded
 
     def _encode_symbol(self, state, symbol):
         state = self._normalize(state, symbol)
@@ -49,7 +51,7 @@ class rANSEncoder:
     def _normalize(self, state, symbol):
         while state >= self.params.freqs[symbol] << self.params.b:
             remainder = state & ((1 << self.params.b) - 1)
-            self.encoded += int2ba(remainder, length=self.params.b)
+            self.encoded.append(remainder)
             state >>= self.params.b
 
         return state
@@ -68,17 +70,21 @@ class rANSEncoder:
 class rANSDecoder:
     def __init__(self, params, encoded, num_symbols):
         self.params = params
-
-        self.encoded = bitarray()
-        self.encoded.frombytes(encoded)
-
         self.num_symbols = num_symbols
-        self.bit_idx = 64
+        self.encoded = []
+
+        for i in range(0, len(encoded) - 8, 4):
+            self.encoded.append(
+                int.from_bytes(encoded[i:i + 4], byteorder='little')
+            )
+
+        self.idx = 1
+        self.last_state = int.from_bytes(encoded[-8:], byteorder='little')
 
     def decode(self):
         symbols = []
 
-        state = ba2int(self.encoded[-self.bit_idx:])
+        state = self.last_state
 
         for _ in range(self.num_symbols):
             state, symbol = self._decode_symbol(state)
@@ -105,8 +111,8 @@ class rANSDecoder:
     def _denormalize(self, state):
         while state < self.params.L:
             state <<= self.params.b
-            state += ba2int(self.encoded[-self.bit_idx - self.params.b:-self.bit_idx])
-            self.bit_idx += self.params.b
+            state += self.encoded[-self.idx]
+            self.idx += 1
 
         return state
 
