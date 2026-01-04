@@ -25,6 +25,19 @@ class tANSEncoder:
     def __init__(self, params):
         self.params = params
         self.encoded = bitarray()
+        self.next_state_table = []
+
+        self._init_tables()
+    
+    def _init_tables(self):
+        for symbol in range(256):
+            freq = self.params.freqs[symbol]
+            states = [0 for _ in range(freq)]
+
+            for state in range(freq, 2 * freq):
+                states[state - freq] = self._next_state(state, symbol)
+            
+            self.next_state_table.append(states)
 
     def encode(self, symbols):
         state = self.params.L
@@ -47,7 +60,7 @@ class tANSEncoder:
     def _encode_symbol(self, state, symbol):
         state = self._normalize(state, symbol)
 
-        next_state = self._next_state(state, symbol)
+        next_state = self.next_state_table[symbol][state - self.params.freqs[symbol]]
 
         return next_state
 
