@@ -32,12 +32,15 @@ class rANSEncoder:
 
             assert self.params.L <= state < self.params.L << self.params.b
 
+        return self._to_bytes(state)
+
+    def _to_bytes(self, last_state):
         self.encoded = b''.join(list(map(
             lambda x: x.to_bytes(length=4, byteorder='little'),
             self.encoded
         )))
 
-        self.encoded += state.to_bytes(length=8, byteorder='little')
+        self.encoded += last_state.to_bytes(length=8, byteorder='little')
 
         return self.encoded
 
