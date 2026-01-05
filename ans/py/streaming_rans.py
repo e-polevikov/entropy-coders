@@ -6,13 +6,7 @@ from utils import estimate_freqs, calc_cumul
 
 class rANSParams:
     def __init__(self, symbols):
-        self.LOG2_M = 16
-        self.M = 1 << self.LOG2_M
-
-        self.L = self.M
-        self.b = 32
-
-        self.freqs = estimate_freqs(symbols, freqs_target_sum=self.M)
+        self.freqs = estimate_freqs(symbols, freqs_target_sum=1 << 16)
         self.cumul = calc_cumul(self.freqs)
 
     def get(self, symbol):
@@ -25,12 +19,16 @@ class rANSEncoder:
         self.encoded = []
 
     def encode(self, symbols):
-        state = self.params.L
+        state = 1 << 16
 
         for symbol in symbols:
-            state = self._encode_symbol(state, symbol)
+            freq, cumul = self.params.get(symbol)
 
-            assert self.params.L <= state < self.params.L << self.params.b
+            if state >= freq << 32:
+                self.encoded.append(state & 0xffffffff)
+                state >>= 32
+
+            state = cumul + state % freq + ((state // freq) << 16)
 
         return self._to_bytes(state)
 
@@ -43,32 +41,7 @@ class rANSEncoder:
         self.encoded += last_state.to_bytes(length=8, byteorder='little')
 
         return self.encoded
-
-    def _encode_symbol(self, state, symbol):
-        state = self._normalize(state, symbol)
-
-        next_state = self._next_state(state, symbol)
-
-        return next_state
-
-    def _normalize(self, state, symbol):
-        while state >= self.params.freqs[symbol] << self.params.b:
-            remainder = state & ((1 << self.params.b) - 1)
-            self.encoded.append(remainder)
-            state >>= self.params.b
-
-        return state
     
-    def _next_state(self, state, symbol):
-        freq, cumul = self.params.get(symbol)
-
-        block_id = state // freq
-        slot = cumul + state % freq
-
-        next_state = (block_id << self.params.LOG2_M) + slot
-
-        return next_state
-
 
 class rANSDecoder:
     def __init__(self, params, encoded, num_symbols):
@@ -90,34 +63,21 @@ class rANSDecoder:
         state = self.last_state
 
         for _ in range(self.num_symbols):
-            state, symbol = self._decode_symbol(state)
+            slot = state & 0xffff
 
-            assert self.params.L <= state < self.params.L << self.params.b
-
+            symbol = bisect(self.params.cumul, slot) - 1
             symbols.append(symbol)
 
+            freq, cumul = self.params.get(symbol)
+
+            state = (state >> 16) * freq + slot - cumul
+
+            if state < 1 << 16:
+                state <<= 32
+                state += self.encoded[-self.idx]
+                self.idx += 1
+
         return list(reversed(symbols))
-    
-    def _decode_symbol(self, state):
-        block_id = state >> self.params.LOG2_M
-        slot = state & (self.params.M - 1)
-
-        symbol = bisect(self.params.cumul, slot) - 1
-
-        freq, cumul = self.params.get(symbol)
-
-        prev_state = block_id * freq + slot - cumul
-        prev_state = self._denormalize(prev_state)
-
-        return prev_state, symbol
-
-    def _denormalize(self, state):
-        while state < self.params.L:
-            state <<= self.params.b
-            state += self.encoded[-self.idx]
-            self.idx += 1
-
-        return state
 
 
 def main():
