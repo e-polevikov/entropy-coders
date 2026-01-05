@@ -1,3 +1,7 @@
+SRC = main.cpp rans.cpp
 
 rans:
-	g++ main.cpp rans.cpp
+	g++ $(SRC) -o main
+
+clean:
+	rm main
