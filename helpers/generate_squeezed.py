@@ -1,7 +1,7 @@
 import random
 
 def main():
-    N = 20 * 10**6
+    N = 100 * (1 << 20)
     squeezed = []
 
     for _ in range(N):
