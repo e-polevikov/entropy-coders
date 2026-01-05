@@ -8,7 +8,7 @@ namespace rANS
 
 inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     uint64_t freq[256] = {};
-    
+
     for (uint64_t i = 0; i < src_size; i++) { freq[src[i]]++; }
 
     uint64_t max_i = 0;
@@ -38,9 +38,8 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
         uint8_t symbol = src[i];
 
         if (state >= freq[symbol] << 32) {
-            *block = state & 0xffffffff;
+            *block++ = state & 0xffffffff;
             state >>= 32;
-            block++;
         }
 
         state = cumul[symbol] + state % freq[symbol] + ((state / freq[symbol]) << 16);
