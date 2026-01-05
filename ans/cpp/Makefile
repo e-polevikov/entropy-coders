@@ -1,7 +1,8 @@
 SRC = main.cpp rans.cpp
+FLAGS = -std=c++20
 
 rans:
-	g++ $(SRC) -o main
+	g++ $(FLAGS) $(SRC) -o main
 
 clean:
 	rm main

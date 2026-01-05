@@ -17,10 +17,16 @@ int main(int argc, char* argv[]) {
     std::ifstream file(argv[1], std::ios::binary);
     file.read((char*) buffer, filesize);
 
+    auto start = std::chrono::steady_clock::now();
     uint64_t compressed_size = rANS::compress(buffer, filesize, dst);
+    auto end = std::chrono::steady_clock::now();
 
-    float compression_rate = static_cast<float>(filesize) / compressed_size;
-    std::cout << compression_rate << std::endl;
+    std::chrono::duration<double> duration = end - start;
+
+    double compression_speed = static_cast<double>(filesize) / 1024 / 1024 / duration.count();   
+    double compression_rate = static_cast<double>(filesize) / compressed_size;
+
+    std::cout << compression_speed << " " << compression_rate << std::endl;
 
     //rANS::decompress(nullptr, nullptr);
 
