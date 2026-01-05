@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <filesystem>
 
@@ -26,7 +27,8 @@ int main(int argc, char* argv[]) {
     double compression_speed = static_cast<double>(filesize) / 1024 / 1024 / duration.count();   
     double compression_rate = static_cast<double>(filesize) / compressed_size;
 
-    std::cout << compression_speed << " " << compression_rate << std::endl;
+    std::cout << std::fixed << std::setprecision(3) << filesize << " -> " << compressed_size << " (" << compression_rate << "x) ";
+    std::cout << std::fixed << std::setprecision(1) << compression_speed << " MiB/s" << std::endl;
 
     //rANS::decompress(nullptr, nullptr);
 

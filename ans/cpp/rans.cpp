@@ -28,7 +28,7 @@ uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
         cumul[i + 1] = cumul[i] + freq[i];
     }
 
-    uint32_t* block = reinterpret_cast<uint32_t*>(dst);
+    uint32_t* block = reinterpret_cast<uint32_t*>(dst + 256 * sizeof(uint16_t));
     uint64_t  state = 1 << 16;
 
     for (uint64_t i = 0; i < src_size; i++) {
@@ -43,7 +43,11 @@ uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
         state = cumul[symbol] + state % freq[symbol] + ((state / freq[symbol]) << 16);
     }
 
-    return sizeof(uint32_t) * (block - reinterpret_cast<uint32_t*>(dst));
+    uint16_t* freq_dst = reinterpret_cast<uint16_t*>(dst);
+
+    for (uint64_t i = 0; i < 256; i++) { freq_dst[i] = freq[i]; }
+
+    return sizeof(uint32_t) * (block - reinterpret_cast<uint32_t*>(dst)) + 256 * sizeof(uint16_t);
 }
 
 void decompress(uint8_t* src, uint8_t* dst) {
