@@ -7,7 +7,9 @@ def estimate_freqs(symbols, freqs_target_sum):
     for symbol in symbols:
         freqs[symbol] += 1
 
-    return normalize_freqs(freqs, target_sum=freqs_target_sum)
+    normalize(freqs, freqs_target_sum)
+
+    return freqs
 
 
 def calc_cumul(freqs):
@@ -19,29 +21,23 @@ def calc_cumul(freqs):
     return cumul
 
 
-def normalize_freqs(freqs, target_sum):
+def normalize(freqs, target_sum):
     N = len(freqs)
 
-    normalized_freqs = [0 for _ in range(N)]
-
     freqs_sum = sum(freqs)
-    normalized_freqs_sum = 0
+    normalized_sum = 0
     max_idx = 0
 
     for i in range(N):
-        normalized = floor(target_sum * freqs[i] / freqs_sum)
+        f = floor(target_sum * freqs[i] / freqs_sum)
 
-        if normalized == 0 and freqs[i] != 0:
-            normalized = 1
+        if f == 0 and freqs[i] > 0:
+            f = 1
 
-        normalized_freqs[i] = normalized
-        normalized_freqs_sum += normalized
+        freqs[i] = f
+        normalized_sum += f
 
-        if normalized > normalized_freqs[max_idx]:
+        if f > freqs[max_idx]:
             max_idx = i
 
-    normalized_freqs[max_idx] += target_sum - sum(normalized_freqs)
-
-    assert sum(normalized_freqs) == target_sum
-
-    return normalized_freqs
+    freqs[max_idx] += target_sum - normalized_sum
