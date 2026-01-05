@@ -1,5 +1,5 @@
-SRC = main.cpp rans.cpp
-FLAGS = -std=c++20 -O3
+SRC = main.cpp
+FLAGS = -std=c++20 -O2
 
 rans:
 	g++ $(FLAGS) $(SRC) -o main
