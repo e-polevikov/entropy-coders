@@ -3,7 +3,7 @@
 namespace rANS
 {
 
-void compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
+uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     uint64_t freq[256] = {};
 
     for (uint64_t i = 0; i < src_size; i++) { freq[src[i]]++; }
@@ -42,10 +42,11 @@ void compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
 
         state = cumul[symbol] + state % freq[symbol] + ((state / freq[symbol]) << 16);
     }
+
+    return sizeof(uint32_t) * (block - reinterpret_cast<uint32_t*>(dst));
 }
 
 void decompress(uint8_t* src, uint8_t* dst) {
-    std::cout << "decompress" << std::endl;
 }
 
 }

@@ -17,7 +17,11 @@ int main(int argc, char* argv[]) {
     std::ifstream file(argv[1], std::ios::binary);
     file.read((char*) buffer, filesize);
 
-    rANS::compress(buffer, filesize, dst);
+    uint64_t compressed_size = rANS::compress(buffer, filesize, dst);
+
+    float compression_rate = static_cast<float>(filesize) / compressed_size;
+    std::cout << compression_rate << std::endl;
+
     //rANS::decompress(nullptr, nullptr);
 
     delete [] buffer;
