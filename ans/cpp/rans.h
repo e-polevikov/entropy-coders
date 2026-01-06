@@ -6,9 +6,9 @@
 namespace rANS
 {
 
-const static uint8_t  LOG2_L = 16;
-const static uint64_t L = 1 << LOG2_L;
-const static uint8_t  b = 32;
+const static  uint8_t LOG2_L = 16;
+const static uint64_t      L = 1 << LOG2_L;
+const static  uint8_t      b = 32;
 
 inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     uint64_t freq[256] = {};
