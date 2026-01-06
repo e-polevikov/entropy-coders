@@ -63,7 +63,7 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     uint64_t compressed_size =
         sizeof(uint32_t) * (block - reinterpret_cast<uint32_t*>(dst))
         + 256 * sizeof(uint16_t);
-    
+
     *reinterpret_cast<uint64_t*>(dst) = compressed_size;
 
     return compressed_size;
