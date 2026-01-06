@@ -1,7 +1,6 @@
 import sys
 import time
 
-from bisect import bisect
 from utils import estimate_freqs, calc_cumul
 
 class rANSParams:
