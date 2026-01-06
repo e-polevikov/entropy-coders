@@ -57,6 +57,14 @@ class rANSDecoder:
         self.idx = 1
         self.last_state = int.from_bytes(encoded[-8:], byteorder='little')
 
+        slot_to_symbol = [0 for _ in range(1 << 16)]
+
+        for symbol in range(256):
+            for slot in range(self.params.cumul[symbol], self.params.cumul[symbol + 1]):
+                slot_to_symbol[slot] = symbol
+
+        self.slot_to_symbol = slot_to_symbol
+
     def decode(self):
         symbols = []
 
@@ -65,7 +73,7 @@ class rANSDecoder:
         for _ in range(self.num_symbols):
             slot = state & 0xffff
 
-            symbol = bisect(self.params.cumul, slot) - 1
+            symbol = self.slot_to_symbol[slot]
             symbols.append(symbol)
 
             freq, cumul = self.params.get(symbol)
