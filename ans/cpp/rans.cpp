@@ -1,6 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cstring>
+#include <cassert>
 #include <filesystem>
 
 #include "rans.h"
@@ -12,8 +14,9 @@ int main(int argc, char* argv[]) {
 
     std::uintmax_t filesize = std::filesystem::file_size(argv[1]);
 
-    uint8_t *buffer = new uint8_t[filesize];
-    uint8_t *dst = new uint8_t[filesize];
+    uint8_t* buffer = new uint8_t[filesize];
+    uint8_t* dst = new uint8_t[filesize];
+    uint8_t* decompressed = new uint8_t[filesize]; 
 
     std::ifstream file(argv[1], std::ios::binary);
     file.read((char*) buffer, filesize);
@@ -27,13 +30,24 @@ int main(int argc, char* argv[]) {
     double compression_speed = static_cast<double>(filesize) / 1024 / 1024 / duration.count();   
     double compression_rate = static_cast<double>(filesize) / compressed_size;
 
-    std::cout << std::fixed << std::setprecision(3) << filesize << " -> " << compressed_size << " (" << compression_rate << "x) ";
-    std::cout << std::fixed << std::setprecision(1) << compression_speed << " MiB/s" << std::endl;
+    std::cout << std::fixed << std::setprecision(3) << filesize << " -> " << compressed_size << " (" << compression_rate << "x)\t";
+    std::cout << std::fixed << std::setprecision(1) << compression_speed << " MiB/s\t";
 
-    rANS::decompress(dst, dst);
+    start = std::chrono::steady_clock::now();
+    rANS::decompress(dst, decompressed);
+    end = std::chrono::steady_clock::now();
+
+    duration = end - start;
+
+    double decompression_speed = static_cast<double>(filesize) / 1024 / 1024 / duration.count();   
+
+    std::cout << std::fixed << std::setprecision(1) << decompression_speed << " MiB/s" << std::endl;
+
+    assert(memcmp(buffer, decompressed, filesize) == 0);
 
     delete [] buffer;
     delete [] dst;
+    delete [] decompressed;
 
     return 0;
 }
