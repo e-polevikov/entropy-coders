@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     std::cout << std::fixed << std::setprecision(3) << filesize << " -> " << compressed_size << " (" << compression_rate << "x) ";
     std::cout << std::fixed << std::setprecision(1) << compression_speed << " MiB/s" << std::endl;
 
-    //rANS::decompress(nullptr, nullptr);
+    rANS::decompress(dst, dst);
 
     delete [] buffer;
     delete [] dst;
