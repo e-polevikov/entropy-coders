@@ -99,7 +99,7 @@ inline static void decompress(uint8_t* src, uint8_t* dst) {
         state = (state >> LOG2_L) * freq[symbol] + slot - cumul[symbol];
         *dst-- = symbol;
 
-        if (state < L) { state = (state << 32) + *block--; }
+        if (state < L) { state = (state << b) + *block--; }
     }
 }
 
