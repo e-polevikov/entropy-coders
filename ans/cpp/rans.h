@@ -2,7 +2,6 @@
 #define RANS
 
 #include <cstdint>
-#include <iostream>
 
 namespace rANS
 {
@@ -14,12 +13,12 @@ const static  uint8_t      b = 32;
 inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     uint64_t freq[256] = {};
 
-    for (uint64_t i = 0; i < src_size; i++) { freq[src[i]]++; }
+    for (uint64_t i = 0; i < src_size; ++i) { ++freq[src[i]]; }
 
     uint64_t max_i = 0;
     uint64_t sum = 0;
 
-    for (uint64_t i = 0; i < 256; i++) {
+    for (uint64_t i = 0; i < 256; ++i) {
         uint64_t f = static_cast<float>(freq[i]) / src_size * L;
 
         if (f == 0 && freq[i] > 0) { f = 1; }
@@ -32,14 +31,14 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     freq[max_i] += L - sum;
 
     uint64_t cumul[1 + 256] = {};
-    for (uint64_t i = 0; i < 256; i++) {
+    for (uint64_t i = 0; i < 256; ++i) {
         cumul[i + 1] = cumul[i] + freq[i];
     }
 
     uint32_t* block = reinterpret_cast<uint32_t*>(dst + sizeof(uint64_t));
     uint64_t  state = L;
 
-    for (uint64_t i = 0; i < src_size; i++) {
+    for (uint64_t i = 0; i < src_size; ++i) {
         uint8_t symbol = src[i];
 
         if (state >= freq[symbol] << b) {
@@ -57,7 +56,7 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
     block += 2;
 
     uint16_t* freq_dst = reinterpret_cast<uint16_t*>(block);
-    for (uint64_t i = 0; i < 256; i++) {
+    for (uint64_t i = 0; i < 256; ++i) {
         freq_dst[i] = freq[i];
     }
 
@@ -75,14 +74,14 @@ inline static void decompress(uint8_t* src, uint8_t* dst) {
     uint16_t* freq = reinterpret_cast<uint16_t*>(src + compressed_size - sizeof(uint16_t) * 256);
 
     uint64_t cumul[1 + 256] = {};
-    for (uint64_t i = 0; i < 256; i++) {
+    for (uint64_t i = 0; i < 256; ++i) {
         cumul[i + 1] = cumul[i] + freq[i];
     }
 
     uint8_t slot_to_symbol[L];
 
-    for (uint16_t symbol = 0; symbol < 256; symbol++) {
-        for (uint64_t slot = cumul[symbol]; slot < cumul[symbol + 1]; slot++) {
+    for (uint16_t symbol = 0; symbol < 256; ++symbol) {
+        for (uint64_t slot = cumul[symbol]; slot < cumul[symbol + 1]; ++slot) {
             slot_to_symbol[slot] = symbol;
         }
     }
@@ -92,7 +91,7 @@ inline static void decompress(uint8_t* src, uint8_t* dst) {
     uint32_t* block    =  reinterpret_cast<uint32_t*>(freq - 10);
 
     dst += dst_size - 1;
-    for (uint64_t i = 0; i < dst_size; i++) {
+    for (uint64_t i = 0; i < dst_size; ++i) {
         uint16_t slot = state & (L - 1);
         uint8_t  symbol = slot_to_symbol[slot];
 
