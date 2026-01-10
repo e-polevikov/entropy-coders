@@ -7,9 +7,9 @@ def main():
     for _ in range(N):
         x = random.randint(1, 100)
 
-        if 1 <= x < 80:
+        if 1 <= x < 70:
             squeezed.append(0)
-        elif 80 <= x < 90:
+        elif 70 <= x < 90:
             squeezed.append(1)
         else:
             squeezed.append(2)

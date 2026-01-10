@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     std::chrono::duration<double> duration = end - start;
 
     double compression_speed = static_cast<double>(filesize) / MB / duration.count();
-    double compression_rate = static_cast<double>(filesize) / MB / compressed_size;
+    double compression_rate = static_cast<double>(filesize) / compressed_size;
 
     std::cout << std::fixed << std::setprecision(3) << filesize << " -> " << compressed_size << " (" << compression_rate << "x)\t";
     std::cout << std::fixed << std::setprecision(1) << compression_speed << " MB/s\t";
