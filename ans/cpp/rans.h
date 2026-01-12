@@ -90,7 +90,7 @@ inline static void decompress(uint8_t* src, uint8_t* dst) {
     memcpy(&dst_size, freq - 4, sizeof(uint64_t));
     memcpy(&state,    freq - 8, sizeof(uint64_t));
 
-    uint32_t* block =  reinterpret_cast<uint32_t*>(freq - 10);
+    uint32_t* block = reinterpret_cast<uint32_t*>(freq - 10);
     dst += dst_size - 1;
 
     for (uint64_t i = 0; i < dst_size; ++i) {
