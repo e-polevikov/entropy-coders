@@ -49,19 +49,17 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
         state = cumul[symbol] + state % freq[symbol] + ((state / freq[symbol]) << LOG2_L);
     }
 
-    *reinterpret_cast<uint64_t*>(block) = state;
-    block += 2;
+    *reinterpret_cast<uint64_t*>(block)     = state;
+    *reinterpret_cast<uint64_t*>(block + 2) = src_size;
 
-    *reinterpret_cast<uint64_t*>(block) = src_size;
-    block += 2;
-
-    uint16_t* freq_dst = reinterpret_cast<uint16_t*>(block);
+    uint16_t* freq_dst = reinterpret_cast<uint16_t*>(block + 4);
     for (uint64_t i = 0; i < 256; ++i) {
         freq_dst[i] = freq[i];
     }
 
     uint64_t compressed_size =
         sizeof(uint32_t) * (block - reinterpret_cast<uint32_t*>(dst))
+        + 2 * sizeof(uint64_t)
         + 256 * sizeof(uint16_t);
 
     *reinterpret_cast<uint64_t*>(dst) = compressed_size;
