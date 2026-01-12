@@ -49,7 +49,7 @@ inline static uint64_t compress(uint8_t* src, uint64_t src_size, uint8_t* dst) {
         state = cumul[symbol] + state % freq[symbol] + ((state / freq[symbol]) << LOG2_L);
     }
 
-    memcpy(block, &state, sizeof(uint64_t));
+    memcpy(block,     &state,    sizeof(uint64_t));
     memcpy(block + 2, &src_size, sizeof(uint64_t));
 
     uint16_t* freq_dst = reinterpret_cast<uint16_t*>(block + 4);
@@ -84,12 +84,15 @@ inline static void decompress(uint8_t* src, uint8_t* dst) {
         }
     }
 
-    uint64_t dst_size = 0; memcpy(&dst_size, freq - 4, sizeof(uint64_t));
-    uint64_t state = 0; memcpy(&state, freq - 8, sizeof(uint64_t));
+    uint64_t dst_size = 0;
+    uint64_t state    = 0;
+
+    memcpy(&dst_size, freq - 4, sizeof(uint64_t));
+    memcpy(&state,    freq - 8, sizeof(uint64_t));
 
     uint32_t* block =  reinterpret_cast<uint32_t*>(freq - 10);
-
     dst += dst_size - 1;
+
     for (uint64_t i = 0; i < dst_size; ++i) {
         uint16_t slot = state & (L - 1);
         uint8_t  symbol = slot_to_symbol[slot];
