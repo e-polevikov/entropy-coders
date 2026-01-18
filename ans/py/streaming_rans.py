@@ -2,12 +2,14 @@ import sys
 import time
 
 from utils import estimate_freqs, calc_cumul
+from bitarray import bitarray
+from bitarray.util import int2ba, ba2int
 
 class rANSParams:
     def __init__(self, symbols):
-        self.LOG2_L = 16
+        self.LOG2_L = 12
         self.L = 1 << self.LOG2_L
-        self.b = 32
+        self.b = 4
 
         self.freqs = estimate_freqs(symbols, freqs_target_sum=self.L)
         self.cumul = calc_cumul(self.freqs)
@@ -19,49 +21,39 @@ class rANSParams:
 class rANSEncoder:
     def __init__(self, params):
         self.params = params
-        self.encoded = []
 
     def encode(self, symbols):
         LOG2_L = self.params.LOG2_L
         L = self.params.L
         b = self.params.b
+
         state = L
+        encoded = bitarray()
 
         for symbol in symbols:
             freq, cumul = self.params.get(symbol)
 
-            if state >= freq << b:
-                self.encoded.append(state & ((1 << b) - 1))
+            while state >= freq << b:
+                bits = int2ba(state & ((1 << b) - 1), length=b)
+                encoded.extend(bits)
                 state >>= b
 
             state = cumul + state % freq + ((state // freq) << LOG2_L)
 
-        return self._to_bytes(state)
+        encoded.extend(int2ba(state, length=b + LOG2_L))
 
-    def _to_bytes(self, last_state):
-        self.encoded = b''.join(list(map(
-            lambda x: x.to_bytes(length=4, byteorder='little'),
-            self.encoded
-        )))
+        return encoded
 
-        self.encoded += last_state.to_bytes(length=8, byteorder='little')
-
-        return self.encoded
-    
 
 class rANSDecoder:
     def __init__(self, params, encoded, num_symbols):
         self.params = params
         self.num_symbols = num_symbols
-        self.encoded = []
+        self.encoded = encoded
 
-        for i in range(0, len(encoded) - 8, 4):
-            self.encoded.append(
-                int.from_bytes(encoded[i:i + 4], byteorder='little')
-            )
-
-        self.idx = 1
-        self.last_state = int.from_bytes(encoded[-8:], byteorder='little')
+        self.idx = self.params.b + self.params.LOG2_L
+        self.last_state = ba2int(encoded[-self.idx:])
+        self.idx += self.params.b
 
         slot_to_symbol = [0 for _ in range(self.params.L)]
 
@@ -90,10 +82,10 @@ class rANSDecoder:
 
             state = (state >> LOG2_L) * freq + slot - cumul
 
-            if state < 1 << LOG2_L:
+            while state < 1 << LOG2_L:
                 state <<= b
-                state += self.encoded[-self.idx]
-                self.idx += 1
+                state += ba2int(self.encoded[-self.idx:-self.idx + b])
+                self.idx += b
 
         return list(reversed(symbols))
 
@@ -127,10 +119,10 @@ def main():
 
     assert symbols == decoded_symbols
 
-    compression_rate = round(len(symbols) / len(encoded), 3)
+    compression_rate = round(8 * len(symbols) / len(encoded), 3)
 
     print()
-    print(f"{len(symbols)} -> {len(encoded)}\t{compression_rate}x")
+    print(f"{len(symbols)} -> {len(encoded) // 8}\t{compression_rate}x")
 
 
 if __name__ == "__main__":
