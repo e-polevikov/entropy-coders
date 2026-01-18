@@ -5,7 +5,11 @@ from utils import estimate_freqs, calc_cumul
 
 class rANSParams:
     def __init__(self, symbols):
-        self.freqs = estimate_freqs(symbols, freqs_target_sum=1 << 16)
+        self.LOG2_L = 16
+        self.L = 1 << self.LOG2_L
+        self.b = 32
+
+        self.freqs = estimate_freqs(symbols, freqs_target_sum=self.L)
         self.cumul = calc_cumul(self.freqs)
 
     def get(self, symbol):
@@ -18,16 +22,19 @@ class rANSEncoder:
         self.encoded = []
 
     def encode(self, symbols):
-        state = 1 << 16
+        LOG2_L = self.params.LOG2_L
+        L = self.params.L
+        b = self.params.b
+        state = L
 
         for symbol in symbols:
             freq, cumul = self.params.get(symbol)
 
-            if state >= freq << 32:
-                self.encoded.append(state & 0xffffffff)
-                state >>= 32
+            if state >= freq << b:
+                self.encoded.append(state & ((1 << b) - 1))
+                state >>= b
 
-            state = cumul + state % freq + ((state // freq) << 16)
+            state = cumul + state % freq + ((state // freq) << LOG2_L)
 
         return self._to_bytes(state)
 
@@ -56,7 +63,7 @@ class rANSDecoder:
         self.idx = 1
         self.last_state = int.from_bytes(encoded[-8:], byteorder='little')
 
-        slot_to_symbol = [0 for _ in range(1 << 16)]
+        slot_to_symbol = [0 for _ in range(self.params.L)]
 
         for symbol in range(256):
             for slot in range(self.params.cumul[symbol], self.params.cumul[symbol + 1]):
@@ -67,10 +74,14 @@ class rANSDecoder:
     def decode(self):
         symbols = []
 
+        LOG2_L = self.params.LOG2_L
+        L = self.params.L
+        b = self.params.b
+
         state = self.last_state
 
         for _ in range(self.num_symbols):
-            slot = state & 0xffff
+            slot = state & (L - 1)
 
             symbol = self.slot_to_symbol[slot]
             symbols.append(symbol)
