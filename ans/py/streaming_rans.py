@@ -88,10 +88,10 @@ class rANSDecoder:
 
             freq, cumul = self.params.get(symbol)
 
-            state = (state >> 16) * freq + slot - cumul
+            state = (state >> LOG2_L) * freq + slot - cumul
 
-            if state < 1 << 16:
-                state <<= 32
+            if state < 1 << LOG2_L:
+                state <<= b
                 state += self.encoded[-self.idx]
                 self.idx += 1
 
