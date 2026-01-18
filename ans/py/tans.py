@@ -21,6 +21,21 @@ class tANSParams:
 class tANSEncoder:
     def __init__(self, params):
         self.params = params
+        self._init_tables()
+
+    def _init_tables(self):
+        b = self.params.b
+        LOG2_L = self.params.LOG2_L
+
+        next_state_table = dict()
+
+        for symbol in range(256):
+            freq, cumul = self.params.get(symbol)
+
+            for state in range(freq, freq << b):
+                next_state_table[(symbol, state)] = cumul + state % freq + ((state // freq) << LOG2_L)
+
+        self.next_state_table = next_state_table
 
     def encode(self, symbols):
         LOG2_L = self.params.LOG2_L
@@ -31,14 +46,14 @@ class tANSEncoder:
         encoded = bitarray()
 
         for symbol in symbols:
-            freq, cumul = self.params.get(symbol)
+            freq = self.params.freqs[symbol]
 
             while state >= freq << b:
                 bits = int2ba(state & ((1 << b) - 1), length=b)
                 encoded.extend(bits)
                 state >>= b
 
-            state = cumul + state % freq + ((state // freq) << LOG2_L)
+            state = self.next_state_table[(symbol, state)]
 
         encoded.extend(int2ba(state, length=b + LOG2_L))
 
